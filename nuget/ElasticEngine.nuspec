@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>ElasticEngine</id>
+        <version>0.1.0</version>
+        <title>ElasticEngine</title>
+        <authors>Matt Hunt</authors>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>A search engine for elastic search Nest</description>
+        <copyright>Matt Hunt</copyright>
+        <language>en-GB</language>
+        <dependencies>
+            <dependency id="NEST" version="1.7.1" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="..\src\ElasticEngine\bin\Release\ElasticEngine.dll" target="lib\net452\ElasticEngine.dll" />
+    </files>
+</package>
