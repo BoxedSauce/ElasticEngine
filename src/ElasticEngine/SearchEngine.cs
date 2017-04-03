@@ -1,60 +1,110 @@
 ﻿using System;
-using System.Collections.Generic;
-using ElasticEngine.Queries;
+using System.Linq;
+using System.Net;
+using Elasticsearch.Net.Connection;
 using Nest;
 
 namespace ElasticEngine
 {
-    public class SearchEngine
+    public class SearchEngine : ISearchEngine
     {
         private const int Retry = 4;
 
-        private readonly Uri _uri;
-        private readonly IConnectionSettingsValues _connectionSettings;
+        private readonly IElasticClient _client;
         
         public SearchEngine(Uri uri)
         {
-            _uri = uri;
+            _client = new ElasticClient(new ConnectionSettings(uri));
         }
 
-        public SearchEngine(IConnectionSettingsValues connectionSettings)
+        public SearchEngine(IConnectionSettingsValues connectionSettings, IConnection connection = null, INestSerializer serializer = null)
         {
-            _connectionSettings = connectionSettings;
+            _client = new ElasticClient(connectionSettings, connection, serializer);
         }
 
-
-        public IEnumerable<T> Search<T>(AbstractSearchQuery<T> query) where T : class
+        public SearchEngine(IElasticClient client)
         {
-            ElasticClient client = GetClient();
+            _client = client;
+        }
+
+        public ElasticSearchResponse<T> Search<T>(AbstractSearchQuery<T> query) where T : class
+        {
             SearchDescriptor<T> search = query.Build();
 
             int retryCount = 0;
+            Exception lastException = null;
 
             while (retryCount < Retry)
             {
                 try
                 {
-                    ISearchResponse<T> searchResponse = client.Search<T>(search);
-                    return searchResponse.Documents;
+                    ISearchResponse<T> searchResponse = _client.Search<T>(search);
+
+                    if (!searchResponse.IsValid)
+                    {
+                        throw new ElasticSearchServerException(
+                            searchResponse.ServerError.Error,
+                            searchResponse.ServerError.ExceptionType,
+                            searchResponse.ServerError.Status);
+                    }
+
+                    ElasticSearchResponse<T> response = new ElasticSearchResponse<T>
+                    {
+                        Count = searchResponse.Documents.Count(),
+                        TotalCount = searchResponse.Total,
+                        MaxScore = searchResponse.MaxScore,
+                        Results = searchResponse.Documents
+                    };
+                    return response;
                 }
-                catch (Exception)
+                catch (WebException wex)
                 {
+                    lastException = wex;
+                    retryCount++;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
+                    retryCount++;
+                }
+            }
+            
+            throw new ElasticSearchException("There was an error occured while performing a search", lastException);
+        }
+
+        public T Get<T>(string id) where T : class
+        {
+            int retryCount = 0;
+            Exception lastException = null;
+
+            while (retryCount < Retry)
+            {
+                try
+                {
+                    IGetResponse<T> searchResponse = _client.Get<T>(id);
+                    if (!searchResponse.IsValid)
+                    {
+                        throw new ElasticSearchServerException(
+                            searchResponse.ServerError.Error,
+                            searchResponse.ServerError.ExceptionType,
+                            searchResponse.ServerError.Status);
+                    }
+
+                    return searchResponse.Source;
+                }
+                catch (WebException wex)
+                {
+                    lastException = wex;
+                    retryCount++;
+                }
+                catch (Exception ex)
+                {
+                    lastException = ex;
                     retryCount++;
                 }
             }
 
-
-            throw new ElasticEngineException();
-        }
-
-
-
-
-        private ElasticClient GetClient()
-        {
-            ElasticClient client = new ElasticClient(new ConnectionSettings());
-
-            return client;
+            throw new ElasticSearchException("There was an error occured while performing a search", lastException);
         }
     }
 }

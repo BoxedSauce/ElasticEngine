@@ -1,6 +1,6 @@
 ﻿using Nest;
 
-namespace ElasticEngine.Queries
+namespace ElasticEngine
 {
     public abstract class AbstractSearchQuery<T> : SearchDescriptor<T> where T : class
     {

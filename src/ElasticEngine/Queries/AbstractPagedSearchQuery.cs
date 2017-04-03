@@ -1,4 +1,4 @@
-﻿namespace ElasticEngine.Queries
+﻿namespace ElasticEngine
 {
     public abstract class AbstractPagedSearchQuery<T> : AbstractSearchQuery<T> where T : class
     {
