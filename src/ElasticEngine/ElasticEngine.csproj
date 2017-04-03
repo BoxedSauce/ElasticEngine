@@ -58,6 +58,10 @@
     <Compile Include="Queries\AbstractPagedSearchQuery.cs" />
     <Compile Include="Queries\AbstractSearchQuery.cs" />
     <Compile Include="ElasticSearchException.cs" />
+    <Compile Include="Responses\ElasticBulkIndexResponse.cs" />
+    <Compile Include="Responses\ElasticIndexResponse.cs" />
+    <Compile Include="Responses\IElasticBulkIndexResponse.cs" />
+    <Compile Include="Responses\IElasticIndexResponse.cs" />
     <Compile Include="Responses\IElasticSearchResponse.cs" />
     <Compile Include="Responses\ElasticSearchResponse.cs" />
     <Compile Include="SearchEngine.cs" />

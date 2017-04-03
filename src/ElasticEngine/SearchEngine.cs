@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using Elasticsearch.Net.Connection;
 using Nest;
 
@@ -8,7 +9,7 @@ namespace ElasticEngine
 {
     public class SearchEngine : ISearchEngine
     {
-        private const int Retry = 4;
+        private const int MaxRetry = 4;
 
         private readonly IElasticClient _client;
         
@@ -34,7 +35,7 @@ namespace ElasticEngine
             int retryCount = 0;
             Exception lastException = null;
 
-            while (retryCount < Retry)
+            while (retryCount < MaxRetry)
             {
                 try
                 {
@@ -60,13 +61,15 @@ namespace ElasticEngine
                 catch (WebException wex)
                 {
                     lastException = wex;
-                    retryCount++;
                 }
                 catch (Exception ex)
                 {
                     lastException = ex;
-                    retryCount++;
                 }
+
+                retryCount++;
+
+                Thread.Sleep(500);
             }
             
             throw new ElasticSearchException("There was an error occured while performing a search", lastException);
@@ -77,7 +80,7 @@ namespace ElasticEngine
             int retryCount = 0;
             Exception lastException = null;
 
-            while (retryCount < Retry)
+            while (retryCount < MaxRetry)
             {
                 try
                 {
@@ -95,15 +98,17 @@ namespace ElasticEngine
                 catch (WebException wex)
                 {
                     lastException = wex;
-                    retryCount++;
                 }
                 catch (Exception ex)
                 {
                     lastException = ex;
-                    retryCount++;
                 }
-            }
 
+                retryCount++;
+
+                Thread.Sleep(500);
+            }
+            
             throw new ElasticSearchException("There was an error occured while performing a search", lastException);
         }
     }
