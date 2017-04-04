@@ -30,10 +30,7 @@ namespace ElasticEngine
                     IIndexResponse indexResponse = _client.Index(entity);
                     if (indexResponse != null && indexResponse.IsValid)
                     {
-                        throw new ElasticSearchServerException(
-                            indexResponse.ServerError.Error,
-                            indexResponse.ServerError.ExceptionType,
-                            indexResponse.ServerError.Status);
+                        throw new ElasticSearchServerException(indexResponse.ServerError.Error);
                     }
                     
                     ElasticIndexResponse response = new ElasticIndexResponse();
@@ -68,10 +65,7 @@ namespace ElasticEngine
                     IBulkResponse indexResponse = _client.IndexMany(entities);
                     if (indexResponse != null && indexResponse.IsValid)
                     {
-                        throw new ElasticSearchServerException(
-                            indexResponse.ServerError.Error,
-                            indexResponse.ServerError.ExceptionType,
-                            indexResponse.ServerError.Status);
+                        throw new ElasticSearchServerException(indexResponse.ServerError.Error);
                     }
                     
                     ElasticBulkIndexResponse response = new ElasticBulkIndexResponse();

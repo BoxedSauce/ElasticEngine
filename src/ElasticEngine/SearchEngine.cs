@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Threading;
-using Elasticsearch.Net.Connection;
 using Nest;
 
 namespace ElasticEngine
@@ -15,12 +14,12 @@ namespace ElasticEngine
         
         public SearchEngine(Uri uri)
         {
-            _client = new ElasticClient(new ConnectionSettings(uri));
+            _client = new ElasticClient(uri);
         }
 
-        public SearchEngine(IConnectionSettingsValues connectionSettings, IConnection connection = null, INestSerializer serializer = null)
+        public SearchEngine(IConnectionSettingsValues connectionSettings)
         {
-            _client = new ElasticClient(connectionSettings, connection, serializer);
+            _client = new ElasticClient(connectionSettings);
         }
 
         public SearchEngine(IElasticClient client)
@@ -30,7 +29,7 @@ namespace ElasticEngine
 
         public ElasticSearchResponse<T> Search<T>(AbstractSearchQuery<T> query) where T : class
         {
-            SearchDescriptor<T> search = query.Build();
+            SearchDescriptor<T> searchQuery = query.Build();
 
             int retryCount = 0;
             Exception lastException = null;
@@ -39,14 +38,10 @@ namespace ElasticEngine
             {
                 try
                 {
-                    ISearchResponse<T> searchResponse = _client.Search<T>(search);
-
+                    ISearchResponse<T> searchResponse = _client.Search<T>(searchQuery);
                     if (!searchResponse.IsValid)
                     {
-                        throw new ElasticSearchServerException(
-                            searchResponse.ServerError.Error,
-                            searchResponse.ServerError.ExceptionType,
-                            searchResponse.ServerError.Status);
+                        throw new ElasticSearchServerException(searchResponse.ServerError.Error);
                     }
 
                     ElasticSearchResponse<T> response = new ElasticSearchResponse<T>
@@ -75,22 +70,26 @@ namespace ElasticEngine
             throw new ElasticSearchException("There was an error occured while performing a search", lastException);
         }
 
+        /// <summary>
+        /// Get a single document by it's Id. Uses the clients default index
+        /// </summary>
+        /// <typeparam name="T">Type of Document to return</typeparam>
+        /// <param name="id">Id of document</param>
+        /// <returns><see cref="T"/>T</returns>
         public T Get<T>(string id) where T : class
         {
             int retryCount = 0;
             Exception lastException = null;
-
+            
             while (retryCount < MaxRetry)
             {
                 try
                 {
-                    IGetResponse<T> searchResponse = _client.Get<T>(id);
+                    IGetRequest getRequest = new GetRequest<T>(_client.ConnectionSettings.DefaultIndex, typeof(T).Name, new Id(id));
+                    IGetResponse<T> searchResponse = _client.Get<T>(getRequest);
                     if (!searchResponse.IsValid)
                     {
-                        throw new ElasticSearchServerException(
-                            searchResponse.ServerError.Error,
-                            searchResponse.ServerError.ExceptionType,
-                            searchResponse.ServerError.Status);
+                        throw new ElasticSearchServerException(searchResponse.ServerError.Error);
                     }
 
                     return searchResponse.Source;
